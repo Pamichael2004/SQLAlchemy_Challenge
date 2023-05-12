@@ -1,6 +1,6 @@
 # Import the dependencies.
 import numpy as np
-
+import pandas as pd
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
@@ -38,6 +38,7 @@ app = Flask(__name__)
 # Flask Routes
 #################################################
 
+
 @app.route("/")
 def home():
 
@@ -50,14 +51,27 @@ def home():
         f"/api/v1.0/tobs:</br/>"
         f"/api/v1.0/<start>:</br/>"  
         f"/api/v1.0/<start>/<end>:</br/>"
-    )
+        f"/Specified start date or end data (YYYY-MM-DD), calculates the TMIN/TAVG/TMAX temperature for all dates greater than and equal to the start date<br/>"
+        f"/api/v1.0/start/end<br/>"
+        f"/Specified start and the end date (YYYY-MM-DD), calculate the TMIN/TAVG/TMAX temperature for dates between the start and end date inclusive<br/>"
+        )
 #Return a JSON list of the minimum temperature, the average temperature, and the maximum temperature for a specified start or start-end range.
 #For a specified start, calculate `TMIN`, `TAVG`, and `TMAX` for all the dates greater than or equal to the start date.
 #For a specified start date and end date, calculate `TMIN`, `TAVG`, and `TMAX` for the dates from the start date to the end date, inclusive.
 
+####################################################
+@app.route("/api/v1.0/stations")
+def stations():
+    
+    stations = session.query(measurement.stations,func.count(measurement.id)).group_by(measurement.stations).order_by(func.count(measurement.id).desc()).all()
+    stations = pd.read_sql(stations.statement, stations.session.bind)
+    return jsonify(stations.to_dict())
+###################################################
+
 @app.route("/api/v1.0/<Date>")
 def startDateOnly(date):
     temp_reading = session.query(func.min(measurement.tobs), func.avg(measurement.tobs), func.max(measurement.tobs)).filter(measurement.date >= date).all()
+    
     return jsonify(temp_reading)
 
 
